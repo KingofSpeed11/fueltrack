@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>FuelTrack</title>
+<meta name="theme-color" content="#0f1115" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ONBOARDING -->
+  <div id="screen-onboarding" class="screen hidden">
+    <header class="topbar"><h1>Set up FuelTrack</h1></header>
+    <div class="card">
+      <h2>About You</h2>
+      <label>Name</label>
+      <input type="text" id="ob-name" placeholder="Your name" />
+
+      <label>Age</label>
+      <input type="number" id="ob-age" placeholder="13" min="8" max="90" />
+
+      <label>Sex</label>
+      <div class="seg" id="ob-sex">
+        <button data-val="male" class="active">Male</button>
+        <button data-val="female">Female</button>
+        <button data-val="other">Other</button>
+      </div>
+
+      <label>Height</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="ob-height-ft" placeholder="ft" style="flex:1" />
+        <input type="number" id="ob-height-in" placeholder="in" style="flex:1" />
+      </div>
+
+      <label>Weight (lb)</label>
+      <input type="number" id="ob-weight" placeholder="130" />
+
+      <label>Activity / Training Level</label>
+      <select id="ob-activity">
+        <option value="1.2">Low activity (little to no training)</option>
+        <option value="1.375">Light training (1-3 days/week)</option>
+        <option value="1.55" selected>Moderate training (3-5 days/week) - most athletes</option>
+        <option value="1.725">Intense daily training (6-7 days/week)</option>
+        <option value="1.9">Very intense (2x/day training)</option>
+      </select>
+
+      <label>Goal</label>
+      <select id="ob-goal">
+        <option value="maintain" selected>Maintain weight / fuel performance</option>
+        <option value="gain">Build muscle (lean gain)</option>
+        <option value="lose">Lose fat (gently)</option>
+      </select>
+
+      <button class="btn" id="ob-submit">Create My Plan</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="screen-dashboard" class="screen hidden">
+    <header class="topbar">
+      <h1>Hey <span id="dash-name">there</span></h1>
+      <span class="date" id="dash-date"></span>
+    </header>
+
+    <div class="card">
+      <h2>Today</h2>
+      <div class="ring-row">
+        <div class="ring" id="cal-ring">
+          <div class="ring-label">
+            <b id="cal-remaining">0</b>
+            <span>kcal left</span>
+          </div>
+        </div>
+        <div class="macro-bars">
+          <div class="macro-row">
+            <div class="labels"><span>Protein</span><span id="protein-txt">0 / 0g</span></div>
+            <div class="bar-track"><div class="bar-fill" id="protein-bar" style="width:0%"></div></div>
+          </div>
+          <div class="macro-row">
+            <div class="labels"><span>Carbs</span><span id="carbs-txt">0 / 0g</span></div>
+            <div class="bar-track"><div class="bar-fill carbs" id="carbs-bar" style="width:0%"></div></div>
+          </div>
+          <div class="macro-row">
+            <div class="labels"><span>Fat</span><span id="fat-txt">0 / 0g</span></div>
+            <div class="bar-track"><div class="bar-fill fat" id="fat-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Logged Today</h2>
+      <div class="entry-list" id="today-entries"></div>
+      <div class="empty-hint hidden" id="today-empty">Nothing logged yet. Tap + to add food.</div>
+    </div>
+  </div>
+
+  <!-- LOG / SCAN -->
+  <div id="screen-log" class="screen hidden">
+    <header class="topbar"><h1>Log Food</h1></header>
+
+    <div id="log-step-capture">
+      <div class="scan-box" id="scan-box">
+        <div id="scan-box-text">Take a photo, describe your meal,<br/>or search for a food.</div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" />
+      <button class="btn" id="btn-take-photo">📷 Take / Choose Photo</button>
+      <button class="btn secondary" id="btn-describe-meal">📝 Describe Your Meal</button>
+      <button class="btn secondary" id="btn-skip-photo">🔍 Search manually</button>
+    </div>
+
+    <div id="log-step-scanning" class="hidden">
+      <img id="scan-preview" class="scan-preview" />
+      <div class="status-line" id="scan-status">Loading AI model…</div>
+    </div>
+
+    <div id="log-step-describe" class="hidden">
+      <div class="card">
+        <h2>What did you eat?</h2>
+        <textarea id="describe-text" rows="4" placeholder="e.g. 2 eggs, a banana, and a cup of white rice" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--card-2); color:var(--text); font-size:15px; font-family:inherit; resize:vertical;"></textarea>
+        <button class="btn" id="btn-analyze-meal">Analyze</button>
+        <button class="btn secondary" id="btn-cancel-describe">Cancel</button>
+      </div>
+    </div>
+
+    <div id="log-step-review" class="hidden">
+      <div class="card">
+        <h2>Detected Items</h2>
+        <div id="review-list"></div>
+        <div class="empty-hint hidden" id="review-empty">Nothing recognized. Add items below.</div>
+      </div>
+      <div class="card">
+        <label>Add another food</label>
+        <input type="text" id="review-search" placeholder="e.g. rice, chicken, apple" />
+        <div class="search-results" id="review-search-results"></div>
+      </div>
+      <div class="card">
+        <div class="goal-summary" id="review-totals">
+          <div><b id="rt-cal">0</b><span>kcal</span></div>
+          <div><b id="rt-protein">0g</b><span>protein</span></div>
+          <div><b id="rt-carbs">0g</b><span>carbs</span></div>
+          <div><b id="rt-fat">0g</b><span>fat</span></div>
+        </div>
+        <button class="btn" id="btn-log-meal">Log All Items</button>
+        <button class="btn secondary" id="btn-cancel-review">Cancel</button>
+      </div>
+    </div>
+
+    <div id="log-step-pick" class="hidden">
+      <img id="pick-preview" class="scan-preview hidden" />
+      <div id="ai-suggestions"></div>
+
+      <label>Or search the food list</label>
+      <input type="text" id="food-search" placeholder="e.g. rice, chicken, apple" />
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <div id="log-step-portion" class="hidden">
+      <div class="card">
+        <h2 id="portion-food-name">Food</h2>
+        <div class="macro-mini" id="portion-base-macro"></div>
+        <label>Portion size</label>
+        <div class="portion-grid" id="portion-grid">
+          <button data-mult="0.5">½x</button>
+          <button data-mult="1" class="active">1x</button>
+          <button data-mult="1.5">1.5x</button>
+          <button data-mult="2">2x</button>
+        </div>
+        <label>Or exact grams</label>
+        <input type="number" id="portion-grams" />
+        <div class="goal-summary" id="portion-totals">
+          <div><b id="pt-cal">0</b><span>kcal</span></div>
+          <div><b id="pt-protein">0g</b><span>protein</span></div>
+          <div><b id="pt-carbs">0g</b><span>carbs</span></div>
+          <div><b id="pt-fat">0g</b><span>fat</span></div>
+        </div>
+        <button class="btn" id="btn-log-it">Log It</button>
+        <button class="btn secondary" id="btn-cancel-log">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="screen-history" class="screen hidden">
+    <header class="topbar"><h1>History</h1></header>
+    <div class="card" id="history-container"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="screen-profile" class="screen hidden">
+    <header class="topbar"><h1>Profile & Goals</h1></header>
+    <div class="card">
+      <h2>Your Plan <span id="pf-mode" style="text-transform:none; color:var(--accent); font-weight:400;"></span></h2>
+      <div class="goal-summary">
+        <div><b id="pf-cal">0</b><span>kcal/day</span></div>
+        <div><b id="pf-protein">0g</b><span>protein</span></div>
+        <div><b id="pf-carbs">0g</b><span>carbs</span></div>
+        <div><b id="pf-fat">0g</b><span>fat</span></div>
+      </div>
+    </div>
+    <button class="btn secondary" id="btn-edit-profile">Edit Info & Recalculate</button>
+
+    <div class="card">
+      <h2>Custom Targets</h2>
+      <label>Calories</label>
+      <input type="number" id="cg-cal" placeholder="2300" />
+      <label>Protein (g)</label>
+      <input type="number" id="cg-protein" placeholder="120" />
+      <label>Carbs (g)</label>
+      <input type="number" id="cg-carbs" placeholder="295" />
+      <label>Fat (g)</label>
+      <input type="number" id="cg-fat" placeholder="55" />
+      <button class="btn" id="btn-save-custom">Save Custom Targets</button>
+      <button class="btn secondary" id="btn-clear-custom">Use Calculated Targets Instead</button>
+    </div>
+  </div>
+
+  <nav class="tabbar hidden" id="tabbar">
+    <button data-screen="dashboard" class="active"><span class="icon">🏠</span>Home</button>
+    <button data-screen="history"><span class="icon">📅</span>History</button>
+    <button data-screen="profile"><span class="icon">⚙️</span>Profile</button>
+  </nav>
+  <button class="fab hidden" id="fab-add">+</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+<script src="data/foods.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
