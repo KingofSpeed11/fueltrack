@@ -105,13 +105,19 @@
     <header class="topbar"><h1>Log Food</h1></header>
 
     <div id="log-step-capture">
-      <div class="scan-box" id="scan-box">
-        <div id="scan-box-text">Take a photo, describe your meal,<br/>or search for a food.</div>
+      <div class="card hidden" id="quick-add-card">
+        <h2>Quick Add</h2>
+        <div id="quick-add-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
       </div>
+
+      <button class="btn" id="btn-describe-meal">📝 Describe Your Meal</button>
+      <div class="status-line" style="margin-top:2px;">Fastest & most accurate — works for anything, including home-cooked meals.</div>
+
+      <button class="btn secondary" id="btn-skip-photo">🔍 Search the Food List</button>
+
       <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" />
-      <button class="btn" id="btn-take-photo">📷 Take / Choose Photo</button>
-      <button class="btn secondary" id="btn-describe-meal">📝 Describe Your Meal</button>
-      <button class="btn secondary" id="btn-skip-photo">🔍 Search manually</button>
+      <button class="btn secondary" id="btn-take-photo">📷 Take / Choose Photo</button>
+      <div class="status-line" style="margin-top:2px;">Best for simple single foods (fruit, burgers, pizza). Won't recognize homemade or mixed dishes — use Describe instead for those.</div>
     </div>
 
     <div id="log-step-scanning" class="hidden">

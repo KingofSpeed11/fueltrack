@@ -1,7 +1,37 @@
 // Built-in nutrition database. Values are per one standard serving.
 // This is what the app looks up after AI (or you) identifies a food.
-// `aliases` are the words/phrases the meal-description parser looks for.
+// `aliases` are the words/phrases the meal-description parser and search look for.
 const FOOD_DB = [
+  // ---- Moroccan ----
+  { id: "chicken_tagine", name: "Chicken Tagine", serving: "1 bowl (350g)", grams: 350, calories: 420, protein: 32, carbs: 18, fat: 24, fiber: 4, sugar: 6, sodium: 780, aliases: ["chicken tagine", "chicken tajine", "djaj tagine"] },
+  { id: "beef_tagine", name: "Beef Tagine", serving: "1 bowl (350g)", grams: 350, calories: 480, protein: 34, carbs: 20, fat: 28, fiber: 4, sugar: 7, sodium: 750, aliases: ["beef tagine", "beef tajine"] },
+  { id: "lamb_tagine", name: "Lamb Tagine", serving: "1 bowl (350g)", grams: 350, calories: 520, protein: 36, carbs: 18, fat: 32, fiber: 4, sugar: 6, sodium: 760, aliases: ["lamb tagine", "lamb tajine"] },
+  { id: "kefta_tagine", name: "Kefta Tagine (meatballs & egg)", serving: "1 bowl (350g)", grams: 350, calories: 500, protein: 30, carbs: 16, fat: 34, fiber: 3, sugar: 5, sodium: 820, aliases: ["kefta tagine", "kefta tajine", "meatball tagine"] },
+  { id: "couscous_moroccan", name: "Moroccan Couscous with Vegetables & Meat", serving: "1.5 cups (400g)", grams: 400, calories: 520, protein: 28, carbs: 62, fat: 16, fiber: 8, sugar: 9, sodium: 650, aliases: ["couscous", "seven vegetable couscous", "kesksou", "sksou"] },
+  { id: "harira", name: "Harira Soup", serving: "1.5 cups (350g)", grams: 350, calories: 220, protein: 12, carbs: 30, fat: 6, fiber: 6, sugar: 4, sodium: 700, aliases: ["harira", "harira soup"] },
+  { id: "msemen", name: "Msemen", serving: "1 piece (90g)", grams: 90, calories: 280, protein: 5, carbs: 34, fat: 14, fiber: 2, sugar: 6, sodium: 320, aliases: ["msemen", "meloui"] },
+  { id: "baghrir", name: "Baghrir (Moroccan Pancakes)", serving: "3 pieces (150g)", grams: 150, calories: 300, protein: 7, carbs: 48, fat: 9, fiber: 2, sugar: 14, sodium: 280, aliases: ["baghrir", "moroccan pancakes"] },
+  { id: "khobz", name: "Khobz (Moroccan Bread)", serving: "1 wedge (80g)", grams: 80, calories: 210, protein: 6, carbs: 41, fat: 2, fiber: 2, sugar: 1, sodium: 380, aliases: ["khobz", "khubz", "moroccan bread"] },
+  { id: "batbout", name: "Batbout", serving: "2 pieces (100g)", grams: 100, calories: 230, protein: 6, carbs: 44, fat: 3, fiber: 2, sugar: 1, sodium: 350, aliases: ["batbout"] },
+  { id: "zaalouk", name: "Zaalouk (Eggplant Salad)", serving: "1/2 cup (120g)", grams: 120, calories: 90, protein: 2, carbs: 10, fat: 5, fiber: 4, sugar: 5, sodium: 300, aliases: ["zaalouk"] },
+  { id: "taktouka", name: "Taktouka (Pepper & Tomato Salad)", serving: "1/2 cup (120g)", grams: 120, calories: 80, protein: 2, carbs: 9, fat: 4, fiber: 3, sugar: 5, sodium: 280, aliases: ["taktouka"] },
+  { id: "bissara", name: "Bissara (Fava Bean Soup)", serving: "1.5 cups (350g)", grams: 350, calories: 260, protein: 14, carbs: 38, fat: 6, fiber: 10, sugar: 4, sodium: 600, aliases: ["bissara", "fava bean soup"] },
+  { id: "rfissa", name: "Rfissa", serving: "1 bowl (400g)", grams: 400, calories: 560, protein: 38, carbs: 48, fat: 24, fiber: 6, sugar: 3, sodium: 780, aliases: ["rfissa"] },
+  { id: "pastilla", name: "Pastilla (Chicken)", serving: "1 slice (150g)", grams: 150, calories: 420, protein: 18, carbs: 38, fat: 22, fiber: 2, sugar: 10, sodium: 480, aliases: ["pastilla", "bastilla"] },
+  { id: "mechoui", name: "Mechoui (Roasted Lamb)", serving: "4 oz (113g)", grams: 113, calories: 320, protein: 26, carbs: 0, fat: 24, fiber: 0, sugar: 0, sodium: 380, aliases: ["mechoui"] },
+  { id: "kefta_skewers", name: "Kefta Skewers (Brochettes)", serving: "3 skewers (150g)", grams: 150, calories: 330, protein: 26, carbs: 4, fat: 24, fiber: 1, sugar: 1, sodium: 520, aliases: ["kefta skewers", "kefta brochettes", "kefta kebab", "brochettes"] },
+  { id: "tanjia", name: "Tanjia", serving: "1 bowl (250g)", grams: 250, calories: 420, protein: 30, carbs: 6, fat: 30, fiber: 1, sugar: 2, sodium: 480, aliases: ["tanjia"] },
+  { id: "harcha", name: "Harcha", serving: "1 piece (80g)", grams: 80, calories: 230, protein: 5, carbs: 32, fat: 9, fiber: 2, sugar: 3, sodium: 260, aliases: ["harcha"] },
+  { id: "chebakia", name: "Chebakia", serving: "3 pieces (60g)", grams: 60, calories: 260, protein: 4, carbs: 34, fat: 12, fiber: 2, sugar: 20, sodium: 40, aliases: ["chebakia"] },
+  { id: "sellou", name: "Sellou (Sfouf)", serving: "2 tbsp (40g)", grams: 40, calories: 210, protein: 5, carbs: 20, fat: 13, fiber: 3, sugar: 10, sodium: 5, aliases: ["sellou", "sfouf"] },
+  { id: "briouat", name: "Briouat", serving: "3 pieces (90g)", grams: 90, calories: 270, protein: 8, carbs: 26, fat: 15, fiber: 1, sugar: 4, sodium: 320, aliases: ["briouat", "briouates"] },
+  { id: "loubia", name: "Loubia (White Bean Stew)", serving: "1.5 cups (350g)", grams: 350, calories: 320, protein: 16, carbs: 46, fat: 8, fiber: 12, sugar: 5, sodium: 650, aliases: ["loubia"] },
+  { id: "adas", name: "Adas (Moroccan Lentil Soup)", serving: "1.5 cups (350g)", grams: 350, calories: 260, protein: 15, carbs: 40, fat: 5, fiber: 10, sugar: 4, sodium: 620, aliases: ["adas", "moroccan lentil soup"] },
+  { id: "moroccan_salad", name: "Moroccan Salad", serving: "1 cup (150g)", grams: 150, calories: 60, protein: 1, carbs: 8, fat: 3, fiber: 2, sugar: 5, sodium: 200, aliases: ["moroccan salad", "salade marocaine"] },
+  { id: "mint_tea", name: "Moroccan Mint Tea", serving: "1 cup (240ml)", grams: 240, calories: 40, protein: 0, carbs: 10, fat: 0, fiber: 0, sugar: 9, sodium: 2, aliases: ["mint tea", "moroccan tea", "atay"] },
+  { id: "amlou", name: "Amlou", serving: "2 tbsp (30g)", grams: 30, calories: 180, protein: 4, carbs: 10, fat: 15, fiber: 2, sugar: 7, sodium: 2, aliases: ["amlou"] },
+  { id: "seffa", name: "Seffa", serving: "1 cup (200g)", grams: 200, calories: 350, protein: 7, carbs: 58, fat: 11, fiber: 3, sugar: 20, sodium: 40, aliases: ["seffa"] },
+
   // ---- Proteins ----
   { id: "chicken_breast", name: "Grilled Chicken Breast", serving: "1 breast (170g)", grams: 170, calories: 280, protein: 53, carbs: 0, fat: 6, fiber: 0, sugar: 0, sodium: 130, aliases: ["grilled chicken breast", "chicken breast", "grilled chicken", "chicken"] },
   { id: "ground_beef_90", name: "Ground Beef (90/10)", serving: "4 oz cooked (113g)", grams: 113, calories: 230, protein: 24, carbs: 0, fat: 14, fiber: 0, sugar: 0, sodium: 75, aliases: ["ground beef", "beef"] },
@@ -16,20 +46,30 @@ const FOOD_DB = [
   { id: "steak", name: "Grilled Steak (sirloin)", serving: "6 oz (170g)", grams: 170, calories: 350, protein: 48, carbs: 0, fat: 16, fiber: 0, sugar: 0, sodium: 105, aliases: ["steak"] },
   { id: "pork_chop", name: "Pork Chop", serving: "1 chop (170g)", grams: 170, calories: 330, protein: 40, carbs: 0, fat: 18, fiber: 0, sugar: 0, sodium: 90, aliases: ["pork chop", "pork"] },
   { id: "shrimp", name: "Shrimp (grilled)", serving: "12 large (100g)", grams: 100, calories: 100, protein: 21, carbs: 0, fat: 1, fiber: 0, sugar: 0, sodium: 190, aliases: ["shrimp"] },
+  { id: "bacon", name: "Bacon", serving: "3 slices (30g)", grams: 30, calories: 130, protein: 9, carbs: 0, fat: 10, fiber: 0, sugar: 0, sodium: 380, aliases: ["bacon"] },
+  { id: "sausage", name: "Sausage Links", serving: "2 links (60g)", grams: 60, calories: 170, protein: 8, carbs: 1, fat: 15, fiber: 0, sugar: 0, sodium: 430, aliases: ["sausage"] },
 
   // ---- Carbs / grains ----
   { id: "white_rice", name: "White Rice (cooked)", serving: "1 cup (158g)", grams: 158, calories: 205, protein: 4, carbs: 45, fat: 0, fiber: 1, sugar: 0, sodium: 2, aliases: ["white rice", "rice"] },
   { id: "brown_rice", name: "Brown Rice (cooked)", serving: "1 cup (195g)", grams: 195, calories: 215, protein: 5, carbs: 45, fat: 2, fiber: 4, sugar: 0, sodium: 10, aliases: ["brown rice"] },
+  { id: "fried_rice", name: "Fried Rice", serving: "1 cup (198g)", grams: 198, calories: 330, protein: 8, carbs: 45, fat: 12, fiber: 2, sugar: 2, sodium: 620, aliases: ["fried rice"] },
+  { id: "quinoa", name: "Quinoa (cooked)", serving: "1 cup (185g)", grams: 185, calories: 220, protein: 8, carbs: 39, fat: 4, fiber: 5, sugar: 2, sodium: 13, aliases: ["quinoa"] },
   { id: "oatmeal", name: "Oatmeal (cooked)", serving: "1 cup (234g)", grams: 234, calories: 165, protein: 6, carbs: 28, fat: 3, fiber: 4, sugar: 1, sodium: 9, aliases: ["oatmeal", "oats"] },
   { id: "bread_wheat", name: "Whole Wheat Bread", serving: "2 slices (56g)", grams: 56, calories: 140, protein: 6, carbs: 24, fat: 2, fiber: 4, sugar: 3, sodium: 260, aliases: ["whole wheat bread", "wheat bread"] },
   { id: "bread_white", name: "White Bread", serving: "2 slices (52g)", grams: 52, calories: 130, protein: 4, carbs: 24, fat: 1, fiber: 1, sugar: 2, sodium: 260, aliases: ["white bread", "toast", "bread"] },
+  { id: "naan", name: "Naan Bread", serving: "1 piece (90g)", grams: 90, calories: 260, protein: 9, carbs: 45, fat: 5, fiber: 2, sugar: 3, sodium: 430, aliases: ["naan"] },
+  { id: "pita", name: "Pita Bread", serving: "1 piece (60g)", grams: 60, calories: 165, protein: 5, carbs: 33, fat: 1, fiber: 1, sugar: 1, sodium: 320, aliases: ["pita", "pita bread"] },
   { id: "bagel", name: "Bagel", serving: "1 medium (105g)", grams: 105, calories: 275, protein: 11, carbs: 55, fat: 1, fiber: 2, sugar: 6, sodium: 500, aliases: ["bagel"] },
   { id: "pasta", name: "Pasta (cooked)", serving: "1 cup (140g)", grams: 140, calories: 220, protein: 8, carbs: 43, fat: 1, fiber: 3, sugar: 1, sodium: 1, aliases: ["pasta", "noodles"] },
   { id: "potato_baked", name: "Baked Potato", serving: "1 medium (173g)", grams: 173, calories: 160, protein: 4, carbs: 37, fat: 0, fiber: 4, sugar: 2, sodium: 15, aliases: ["baked potato", "potato"] },
   { id: "sweet_potato", name: "Sweet Potato (baked)", serving: "1 medium (150g)", grams: 150, calories: 130, protein: 2, carbs: 30, fat: 0, fiber: 4, sugar: 6, sodium: 55, aliases: ["sweet potato"] },
+  { id: "hash_browns", name: "Hash Browns", serving: "1 cup (100g)", grams: 100, calories: 220, protein: 2, carbs: 24, fat: 14, fiber: 2, sugar: 1, sodium: 320, aliases: ["hash browns"] },
   { id: "tortilla", name: "Flour Tortilla", serving: "1 large (60g)", grams: 60, calories: 175, protein: 5, carbs: 29, fat: 4, fiber: 2, sugar: 1, sodium: 400, aliases: ["tortilla"] },
   { id: "cereal", name: "Cereal (dry)", serving: "1 cup (30g)", grams: 30, calories: 115, protein: 2, carbs: 25, fat: 1, fiber: 2, sugar: 10, sodium: 150, aliases: ["cereal"] },
   { id: "mashed_potato", name: "Mashed Potatoes", serving: "1 cup (210g)", grams: 210, calories: 240, protein: 4, carbs: 35, fat: 9, fiber: 3, sugar: 3, sodium: 640, aliases: ["mashed potatoes", "mashed potato"] },
+  { id: "pancakes", name: "Pancakes", serving: "3 pancakes w/ syrup (200g)", grams: 200, calories: 350, protein: 8, carbs: 55, fat: 10, fiber: 2, sugar: 22, sodium: 600, aliases: ["pancakes"] },
+  { id: "waffle", name: "Waffle", serving: "1 Belgian waffle (90g)", grams: 90, calories: 290, protein: 6, carbs: 40, fat: 12, fiber: 2, sugar: 8, sodium: 400, aliases: ["waffle", "waffles"] },
+  { id: "french_toast", name: "French Toast", serving: "2 slices (130g)", grams: 130, calories: 310, protein: 9, carbs: 40, fat: 12, fiber: 2, sugar: 12, sodium: 400, aliases: ["french toast"] },
 
   // ---- Fruit ----
   { id: "banana", name: "Banana", serving: "1 medium (118g)", grams: 118, calories: 105, protein: 1, carbs: 27, fat: 0, fiber: 3, sugar: 14, sodium: 1, aliases: ["banana"] },
@@ -39,13 +79,21 @@ const FOOD_DB = [
   { id: "strawberries", name: "Strawberries", serving: "1 cup (152g)", grams: 152, calories: 49, protein: 1, carbs: 12, fat: 0, fiber: 3, sugar: 7, sodium: 2, aliases: ["strawberries", "strawberry"] },
   { id: "blueberries", name: "Blueberries", serving: "1 cup (148g)", grams: 148, calories: 84, protein: 1, carbs: 21, fat: 0, fiber: 4, sugar: 15, sodium: 1, aliases: ["blueberries", "blueberry"] },
   { id: "pineapple", name: "Pineapple", serving: "1 cup (165g)", grams: 165, calories: 83, protein: 1, carbs: 22, fat: 0, fiber: 2, sugar: 16, sodium: 2, aliases: ["pineapple"] },
+  { id: "mango", name: "Mango", serving: "1 cup (165g)", grams: 165, calories: 100, protein: 1, carbs: 25, fat: 0, fiber: 3, sugar: 23, sodium: 2, aliases: ["mango"] },
+  { id: "watermelon", name: "Watermelon", serving: "1 cup (152g)", grams: 152, calories: 46, protein: 1, carbs: 12, fat: 0, fiber: 1, sugar: 10, sodium: 2, aliases: ["watermelon"] },
+  { id: "kiwi", name: "Kiwi", serving: "1 medium (69g)", grams: 69, calories: 42, protein: 1, carbs: 10, fat: 0, fiber: 2, sugar: 6, sodium: 2, aliases: ["kiwi"] },
+  { id: "cantaloupe", name: "Cantaloupe", serving: "1 cup (160g)", grams: 160, calories: 54, protein: 1, carbs: 13, fat: 0, fiber: 1, sugar: 13, sodium: 26, aliases: ["cantaloupe"] },
   { id: "lemon", name: "Lemon", serving: "1 medium (58g)", grams: 58, calories: 17, protein: 1, carbs: 5, fat: 0, fiber: 2, sugar: 1, sodium: 1, aliases: ["lemon"] },
   { id: "pomegranate", name: "Pomegranate", serving: "1/2 fruit (100g)", grams: 100, calories: 83, protein: 2, carbs: 19, fat: 1, fiber: 4, sugar: 14, sodium: 3, aliases: ["pomegranate"] },
   { id: "fig", name: "Fig", serving: "2 medium (100g)", grams: 100, calories: 74, protein: 1, carbs: 19, fat: 0, fiber: 3, sugar: 16, sodium: 1, aliases: ["figs", "fig"] },
+  { id: "dates", name: "Dates", serving: "3 dates (75g)", grams: 75, calories: 200, protein: 1, carbs: 54, fat: 0, fiber: 5, sugar: 47, sodium: 1, aliases: ["dates"] },
 
   // ---- Vegetables ----
   { id: "broccoli", name: "Broccoli (steamed)", serving: "1 cup (156g)", grams: 156, calories: 55, protein: 4, carbs: 11, fat: 1, fiber: 5, sugar: 2, sodium: 32, aliases: ["broccoli"] },
   { id: "spinach", name: "Spinach (raw)", serving: "2 cups (60g)", grams: 60, calories: 14, protein: 2, carbs: 2, fat: 0, fiber: 1, sugar: 0, sodium: 47, aliases: ["spinach"] },
+  { id: "kale", name: "Kale", serving: "1 cup (67g)", grams: 67, calories: 33, protein: 2, carbs: 6, fat: 0, fiber: 1, sugar: 0, sodium: 29, aliases: ["kale"] },
+  { id: "asparagus", name: "Asparagus", serving: "1 cup (134g)", grams: 134, calories: 27, protein: 3, carbs: 5, fat: 0, fiber: 3, sugar: 2, sodium: 3, aliases: ["asparagus"] },
+  { id: "zucchini", name: "Zucchini", serving: "1 cup (124g)", grams: 124, calories: 20, protein: 1, carbs: 4, fat: 0, fiber: 1, sugar: 3, sodium: 10, aliases: ["zucchini"] },
   { id: "salad", name: "Mixed Green Salad", serving: "2 cups (85g)", grams: 85, calories: 20, protein: 2, carbs: 4, fat: 0, fiber: 2, sugar: 1, sodium: 15, aliases: ["green salad", "salad"] },
   { id: "carrots", name: "Carrots", serving: "1 cup (128g)", grams: 128, calories: 52, protein: 1, carbs: 12, fat: 0, fiber: 4, sugar: 6, sodium: 88, aliases: ["carrots", "carrot"] },
   { id: "green_beans", name: "Green Beans", serving: "1 cup (125g)", grams: 125, calories: 35, protein: 2, carbs: 8, fat: 0, fiber: 4, sugar: 2, sodium: 6, aliases: ["green beans"] },
@@ -56,6 +104,7 @@ const FOOD_DB = [
   { id: "bell_pepper", name: "Bell Pepper", serving: "1 medium (119g)", grams: 119, calories: 24, protein: 1, carbs: 6, fat: 0, fiber: 2, sugar: 3, sodium: 4, aliases: ["bell pepper"] },
   { id: "avocado", name: "Avocado", serving: "1/2 fruit (100g)", grams: 100, calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 7, sugar: 0, sodium: 7, aliases: ["avocado"] },
   { id: "guacamole", name: "Guacamole", serving: "1/4 cup (60g)", grams: 60, calories: 100, protein: 1, carbs: 6, fat: 9, fiber: 4, sugar: 0, sodium: 150, aliases: ["guacamole", "guac"] },
+  { id: "hummus", name: "Hummus", serving: "1/4 cup (60g)", grams: 60, calories: 100, protein: 3, carbs: 8, fat: 7, fiber: 3, sugar: 0, sodium: 210, aliases: ["hummus"] },
 
   // ---- Dairy ----
   { id: "milk_whole", name: "Milk (whole)", serving: "1 cup (244g)", grams: 244, calories: 150, protein: 8, carbs: 12, fat: 8, fiber: 0, sugar: 12, sodium: 105, aliases: ["whole milk"] },
@@ -64,7 +113,7 @@ const FOOD_DB = [
   { id: "string_cheese", name: "String Cheese", serving: "1 stick (28g)", grams: 28, calories: 80, protein: 7, carbs: 1, fat: 6, fiber: 0, sugar: 0, sodium: 200, aliases: ["string cheese"] },
   { id: "ice_cream", name: "Ice Cream", serving: "1/2 cup (66g)", grams: 66, calories: 145, protein: 3, carbs: 17, fat: 8, fiber: 1, sugar: 14, sodium: 55, aliases: ["ice cream"] },
 
-  // ---- Fast food / meals ----
+  // ---- Fast food / American meals ----
   { id: "cheeseburger", name: "Cheeseburger", serving: "1 burger (170g)", grams: 170, calories: 480, protein: 25, carbs: 34, fat: 27, fiber: 2, sugar: 7, sodium: 950, aliases: ["cheeseburger"] },
   { id: "hamburger", name: "Hamburger", serving: "1 burger (150g)", grams: 150, calories: 400, protein: 22, carbs: 33, fat: 20, fiber: 2, sugar: 6, sodium: 700, aliases: ["hamburger", "burger"] },
   { id: "pizza", name: "Pizza (cheese)", serving: "1 slice (107g)", grams: 107, calories: 270, protein: 12, carbs: 33, fat: 10, fiber: 2, sugar: 4, sodium: 550, aliases: ["pizza slice", "pizza"] },
@@ -72,14 +121,39 @@ const FOOD_DB = [
   { id: "chicken_nuggets", name: "Chicken Nuggets", serving: "6 pieces (100g)", grams: 100, calories: 280, protein: 14, carbs: 17, fat: 18, fiber: 1, sugar: 0, sodium: 540, aliases: ["chicken nuggets", "nuggets"] },
   { id: "hotdog", name: "Hot Dog", serving: "1 with bun (98g)", grams: 98, calories: 290, protein: 10, carbs: 24, fat: 17, fiber: 1, sugar: 4, sodium: 810, aliases: ["hot dog", "hotdog"] },
   { id: "burrito", name: "Burrito (chicken)", serving: "1 burrito (280g)", grams: 280, calories: 550, protein: 30, carbs: 65, fat: 18, fiber: 8, sugar: 4, sodium: 1200, aliases: ["burrito"] },
-  { id: "chicken_sandwich", name: "Chicken Sandwich", serving: "1 sandwich (220g)", grams: 220, calories: 500, protein: 28, carbs: 45, fat: 22, fiber: 2, sugar: 6, sodium: 1000, aliases: ["chicken sandwich"] },
+  { id: "burrito_bowl", name: "Burrito Bowl", serving: "1 bowl (400g)", grams: 400, calories: 650, protein: 38, carbs: 70, fat: 24, fiber: 10, sugar: 5, sodium: 1300, aliases: ["burrito bowl"] },
+  { id: "quesadilla", name: "Quesadilla (cheese)", serving: "1 quesadilla (150g)", grams: 150, calories: 440, protein: 18, carbs: 36, fat: 26, fiber: 2, sugar: 3, sodium: 900, aliases: ["quesadilla"] },
+  { id: "enchilada", name: "Enchilada", serving: "1 enchilada (150g)", grams: 150, calories: 320, protein: 14, carbs: 28, fat: 18, fiber: 3, sugar: 3, sodium: 700, aliases: ["enchilada"] },
+  { id: "nachos", name: "Nachos", serving: "1 plate (200g)", grams: 200, calories: 490, protein: 14, carbs: 46, fat: 28, fiber: 4, sugar: 3, sodium: 900, aliases: ["nachos"] },
+  { id: "churro", name: "Churro", serving: "1 churro (50g)", grams: 50, calories: 180, protein: 2, carbs: 24, fat: 9, fiber: 1, sugar: 12, sodium: 90, aliases: ["churro"] },
   { id: "taco", name: "Taco", serving: "1 taco (110g)", grams: 110, calories: 210, protein: 10, carbs: 18, fat: 11, fiber: 3, sugar: 2, sodium: 400, aliases: ["tacos", "taco"] },
+  { id: "chicken_sandwich", name: "Chicken Sandwich", serving: "1 sandwich (220g)", grams: 220, calories: 500, protein: 28, carbs: 45, fat: 22, fiber: 2, sugar: 6, sodium: 1000, aliases: ["chicken sandwich"] },
+  { id: "sub_sandwich", name: "Sub Sandwich (6-inch turkey)", serving: "1 sub (230g)", grams: 230, calories: 350, protein: 22, carbs: 45, fat: 9, fiber: 4, sugar: 6, sodium: 900, aliases: ["sub sandwich", "sub"] },
+  { id: "grilled_cheese", name: "Grilled Cheese Sandwich", serving: "1 sandwich (100g)", grams: 100, calories: 370, protein: 13, carbs: 33, fat: 20, fiber: 1, sugar: 4, sodium: 700, aliases: ["grilled cheese"] },
+  { id: "blt", name: "BLT Sandwich", serving: "1 sandwich (180g)", grams: 180, calories: 430, protein: 16, carbs: 35, fat: 26, fiber: 2, sugar: 4, sodium: 780, aliases: ["blt"] },
+  { id: "shawarma", name: "Chicken Shawarma Wrap", serving: "1 wrap (280g)", grams: 280, calories: 520, protein: 32, carbs: 48, fat: 22, fiber: 3, sugar: 4, sodium: 1050, aliases: ["shawarma"] },
+  { id: "gyro", name: "Gyro", serving: "1 gyro (280g)", grams: 280, calories: 500, protein: 26, carbs: 44, fat: 26, fiber: 3, sugar: 4, sodium: 1000, aliases: ["gyro"] },
+  { id: "falafel_wrap", name: "Falafel Wrap", serving: "1 wrap (250g)", grams: 250, calories: 460, protein: 14, carbs: 58, fat: 18, fiber: 8, sugar: 5, sodium: 850, aliases: ["falafel wrap", "falafel"] },
   { id: "spaghetti_meat", name: "Spaghetti with Meat Sauce", serving: "1.5 cups (300g)", grams: 300, calories: 450, protein: 22, carbs: 55, fat: 15, fiber: 5, sugar: 8, sodium: 800, aliases: ["spaghetti with meat sauce", "spaghetti"] },
+  { id: "lasagna", name: "Lasagna", serving: "1 piece (250g)", grams: 250, calories: 400, protein: 22, carbs: 36, fat: 18, fiber: 3, sugar: 8, sodium: 850, aliases: ["lasagna"] },
+  { id: "alfredo", name: "Fettuccine Alfredo", serving: "1 cup (240g)", grams: 240, calories: 520, protein: 16, carbs: 48, fat: 30, fiber: 2, sugar: 4, sodium: 900, aliases: ["fettuccine alfredo", "alfredo"] },
+  { id: "meatballs", name: "Meatballs with Sauce", serving: "3 meatballs (150g)", grams: 150, calories: 280, protein: 18, carbs: 10, fat: 19, fiber: 2, sugar: 5, sodium: 650, aliases: ["meatballs"] },
+  { id: "garlic_bread", name: "Garlic Bread", serving: "2 slices (60g)", grams: 60, calories: 190, protein: 4, carbs: 22, fat: 10, fiber: 1, sugar: 1, sodium: 320, aliases: ["garlic bread"] },
   { id: "chicken_caesar", name: "Chicken Caesar Salad", serving: "1 bowl (300g)", grams: 300, calories: 470, protein: 35, carbs: 12, fat: 32, fiber: 3, sugar: 3, sodium: 1050, aliases: ["chicken caesar salad", "caesar salad"] },
   { id: "pbj", name: "PB&J Sandwich", serving: "1 sandwich (100g)", grams: 100, calories: 350, protein: 11, carbs: 45, fat: 15, fiber: 3, sugar: 17, sodium: 380, aliases: ["pb&j", "peanut butter and jelly", "pbj sandwich"] },
   { id: "chicken_rice_bowl", name: "Grilled Chicken & Rice Bowl", serving: "1 bowl (350g)", grams: 350, calories: 520, protein: 45, carbs: 55, fat: 12, fiber: 3, sugar: 2, sodium: 620, aliases: ["chicken and rice bowl", "chicken rice bowl"] },
 
-  // ---- Snacks ----
+  // ---- Asian ----
+  { id: "chow_mein", name: "Chow Mein", serving: "1 cup (200g)", grams: 200, calories: 270, protein: 9, carbs: 40, fat: 8, fiber: 3, sugar: 4, sodium: 700, aliases: ["chow mein"] },
+  { id: "pad_thai", name: "Pad Thai", serving: "1 bowl (300g)", grams: 300, calories: 450, protein: 18, carbs: 55, fat: 16, fiber: 3, sugar: 10, sodium: 900, aliases: ["pad thai"] },
+  { id: "sushi_roll", name: "Sushi Roll (California, 8pc)", serving: "8 pieces (200g)", grams: 200, calories: 260, protein: 8, carbs: 48, fat: 4, fiber: 2, sugar: 6, sodium: 500, aliases: ["sushi roll", "sushi", "california roll"] },
+  { id: "ramen", name: "Ramen", serving: "1 bowl (400g)", grams: 400, calories: 470, protein: 18, carbs: 60, fat: 16, fiber: 3, sugar: 3, sodium: 1800, aliases: ["ramen"] },
+  { id: "orange_chicken", name: "Orange Chicken", serving: "1 cup (220g)", grams: 220, calories: 490, protein: 20, carbs: 48, fat: 24, fiber: 1, sugar: 24, sodium: 800, aliases: ["orange chicken"] },
+  { id: "general_tso", name: "General Tso's Chicken", serving: "1 cup (220g)", grams: 220, calories: 500, protein: 22, carbs: 46, fat: 26, fiber: 1, sugar: 22, sodium: 850, aliases: ["general tso's chicken", "general tso chicken", "general tso"] },
+  { id: "dumplings", name: "Dumplings", serving: "6 pieces (150g)", grams: 150, calories: 300, protein: 10, carbs: 36, fat: 12, fiber: 2, sugar: 2, sodium: 650, aliases: ["dumplings", "potstickers"] },
+  { id: "spring_roll", name: "Spring Roll", serving: "2 pieces (100g)", grams: 100, calories: 180, protein: 4, carbs: 22, fat: 8, fiber: 2, sugar: 2, sodium: 400, aliases: ["spring roll", "spring rolls", "egg roll"] },
+
+  // ---- Snacks & sweets ----
   { id: "protein_bar", name: "Protein Bar", serving: "1 bar (60g)", grams: 60, calories: 220, protein: 20, carbs: 24, fat: 8, fiber: 3, sugar: 9, sodium: 200, aliases: ["protein bar"] },
   { id: "granola_bar", name: "Granola Bar", serving: "1 bar (28g)", grams: 28, calories: 120, protein: 2, carbs: 20, fat: 4, fiber: 1, sugar: 8, sodium: 65, aliases: ["granola bar"] },
   { id: "chips", name: "Potato Chips", serving: "1 oz (28g)", grams: 28, calories: 150, protein: 2, carbs: 15, fat: 10, fiber: 1, sugar: 0, sodium: 170, aliases: ["potato chips", "chips"] },
@@ -88,6 +162,14 @@ const FOOD_DB = [
   { id: "peanut_butter", name: "Peanut Butter", serving: "2 tbsp (32g)", grams: 32, calories: 190, protein: 8, carbs: 6, fat: 16, fiber: 2, sugar: 3, sodium: 150, aliases: ["peanut butter"] },
   { id: "almonds", name: "Almonds", serving: "1 oz / 23 nuts (28g)", grams: 28, calories: 165, protein: 6, carbs: 6, fat: 14, fiber: 4, sugar: 1, sodium: 0, aliases: ["almonds"] },
   { id: "trail_mix", name: "Trail Mix", serving: "1/4 cup (35g)", grams: 35, calories: 170, protein: 5, carbs: 15, fat: 11, fiber: 2, sugar: 9, sodium: 40, aliases: ["trail mix"] },
+  { id: "candy_bar", name: "Candy Bar", serving: "1 bar (45g)", grams: 45, calories: 230, protein: 3, carbs: 29, fat: 12, fiber: 1, sugar: 24, sodium: 100, aliases: ["candy bar", "chocolate bar", "candy"] },
+  { id: "cookies", name: "Cookies", serving: "3 cookies (40g)", grams: 40, calories: 190, protein: 2, carbs: 28, fat: 8, fiber: 1, sugar: 16, sodium: 130, aliases: ["cookies", "cookie"] },
+  { id: "brownie", name: "Brownie", serving: "1 piece (56g)", grams: 56, calories: 240, protein: 3, carbs: 36, fat: 10, fiber: 1, sugar: 24, sodium: 150, aliases: ["brownie"] },
+  { id: "cake", name: "Cake (slice)", serving: "1 slice (100g)", grams: 100, calories: 350, protein: 4, carbs: 50, fat: 15, fiber: 1, sugar: 32, sodium: 300, aliases: ["cake"] },
+  { id: "donut", name: "Donut", serving: "1 donut (60g)", grams: 60, calories: 250, protein: 3, carbs: 31, fat: 12, fiber: 1, sugar: 12, sodium: 260, aliases: ["donut", "doughnut"] },
+  { id: "muffin", name: "Muffin (blueberry)", serving: "1 muffin (110g)", grams: 110, calories: 350, protein: 5, carbs: 55, fat: 13, fiber: 2, sugar: 30, sodium: 380, aliases: ["muffin"] },
+  { id: "cinnamon_roll", name: "Cinnamon Roll", serving: "1 roll (100g)", grams: 100, calories: 340, protein: 5, carbs: 50, fat: 13, fiber: 1, sugar: 25, sodium: 350, aliases: ["cinnamon roll"] },
+  { id: "croissant", name: "Croissant", serving: "1 croissant (60g)", grams: 60, calories: 230, protein: 5, carbs: 26, fat: 12, fiber: 1, sugar: 6, sodium: 260, aliases: ["croissant"] },
 
   // ---- Drinks ----
   { id: "gatorade", name: "Gatorade", serving: "20 oz bottle (591ml)", grams: 591, calories: 140, protein: 0, carbs: 36, fat: 0, fiber: 0, sugar: 34, sodium: 270, aliases: ["gatorade"] },
@@ -95,10 +177,15 @@ const FOOD_DB = [
   { id: "soda", name: "Soda", serving: "12 oz can (355ml)", grams: 355, calories: 150, protein: 0, carbs: 39, fat: 0, fiber: 0, sugar: 39, sodium: 45, aliases: ["soda", "coke", "pop"] },
   { id: "orange_juice", name: "Orange Juice", serving: "1 cup (248g)", grams: 248, calories: 110, protein: 2, carbs: 26, fat: 0, fiber: 0, sugar: 21, sodium: 2, aliases: ["orange juice"] },
   { id: "chocolate_milk", name: "Chocolate Milk", serving: "1 cup (250g)", grams: 250, calories: 208, protein: 8, carbs: 26, fat: 8, fiber: 1, sugar: 24, sodium: 150, aliases: ["chocolate milk"] },
+  { id: "energy_drink", name: "Energy Drink", serving: "1 can (250ml)", grams: 250, calories: 110, protein: 0, carbs: 28, fat: 0, fiber: 0, sugar: 27, sodium: 200, aliases: ["energy drink"] },
+  { id: "smoothie", name: "Fruit Smoothie", serving: "1 cup (300g)", grams: 300, calories: 220, protein: 4, carbs: 50, fat: 2, fiber: 3, sugar: 40, sodium: 40, aliases: ["smoothie"] },
 ];
 
 // Maps AI (MobileNet/ImageNet) label keywords to a food id in FOOD_DB.
 // Matching is done by substring, case-insensitive, against the AI's predicted label.
+// NOTE: MobileNet only recognizes ~1000 generic ImageNet categories - it has
+// no concept of specific dishes (Moroccan or otherwise), so this list only
+// covers foods that actually exist as ImageNet classes.
 const AI_KEYWORD_MAP = [
   ["cheeseburger", "cheeseburger"],
   ["hamburger", "hamburger"],
@@ -128,7 +215,11 @@ const AI_KEYWORD_MAP = [
   ["potpie", "chicken_rice_bowl"],
   ["meat loaf", "ground_beef_90"],
   ["carbonara", "pasta"],
-  ["consomme", "chicken_rice_bowl"],
+  ["consomme", "harira"],
+  ["hot pot", "harira"],
+  ["trifle", "cake"],
+  ["espresso", "mint_tea"],
+  ["dough", "khobz"],
 ];
 
 if (typeof module !== "undefined") {

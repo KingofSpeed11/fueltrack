@@ -282,6 +282,43 @@ function resetLogFlow() {
   $("describe-text").value = "";
   $("review-search").value = "";
   $("review-search-results").innerHTML = "";
+  renderQuickAdd();
+}
+
+// ---------- Quick Add (learns your most-logged foods) ----------
+function computeFrequentFoods() {
+  const counts = {};
+  const lastGrams = {};
+  logs.forEach((l) => {
+    if (!l.foodId) return;
+    counts[l.foodId] = (counts[l.foodId] || 0) + 1;
+    lastGrams[l.foodId] = l.grams;
+  });
+  return Object.keys(counts)
+    .sort((a, b) => counts[b] - counts[a])
+    .slice(0, 6)
+    .map((id) => ({ food: FOOD_DB.find((f) => f.id === id), grams: lastGrams[id] }))
+    .filter((x) => x.food);
+}
+
+function renderQuickAdd() {
+  const frequent = computeFrequentFoods();
+  const card = $("quick-add-card");
+  const list = $("quick-add-list");
+  if (frequent.length === 0) {
+    card.classList.add("hidden");
+    return;
+  }
+  card.classList.remove("hidden");
+  list.innerHTML = "";
+  frequent.forEach(({ food, grams }) => {
+    const chip = document.createElement("button");
+    chip.className = "btn secondary small";
+    chip.style.cssText = "width:auto; margin-top:0; padding:8px 14px; font-size:13px;";
+    chip.textContent = food.name;
+    chip.addEventListener("click", () => selectFood(food, grams));
+    list.appendChild(chip);
+  });
 }
 
 // ---------- Meal description parser (no API - simple on-device matching) ----------
@@ -465,6 +502,7 @@ $("btn-log-meal").addEventListener("click", () => {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       date: todayStr(),
       time: new Date().toISOString(),
+      foodId: item.food.id,
       name: item.food.name,
       grams: Math.round(item.food.grams * ratio),
       calories: Math.round(item.food.calories * ratio),
@@ -600,16 +638,18 @@ $("food-search").addEventListener("input", () => {
     });
 });
 
-function selectFood(food) {
+function selectFood(food, defaultGrams) {
+  const grams = defaultGrams || food.grams;
   currentScan.food = food;
-  currentScan.portionMult = 1;
-  currentScan.portionGrams = food.grams;
+  currentScan.portionMult = grams / food.grams;
+  currentScan.portionGrams = grams;
+  $("log-step-capture").classList.add("hidden");
   $("log-step-pick").classList.add("hidden");
   $("log-step-portion").classList.remove("hidden");
   $("portion-food-name").textContent = food.name;
   $("portion-base-macro").innerHTML = `<span>Base serving: ${food.serving}</span>`;
-  $("portion-grams").value = food.grams;
-  $("portion-grid").querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.mult === "1"));
+  $("portion-grams").value = Math.round(grams);
+  $("portion-grid").querySelectorAll("button").forEach((b) => b.classList.toggle("active", parseFloat(b.dataset.mult) === currentScan.portionMult));
   updatePortionTotals();
 }
 
@@ -648,6 +688,7 @@ $("btn-log-it").addEventListener("click", () => {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
     date: todayStr(),
     time: new Date().toISOString(),
+    foodId: food.id,
     name: food.name,
     grams: Math.round(currentScan.portionGrams),
     calories: Math.round(food.calories * ratio),
@@ -662,6 +703,7 @@ $("btn-log-it").addEventListener("click", () => {
   logs.push(entry);
   saveLogs(logs);
   renderAll();
+  resetLogFlow();
   showScreen("dashboard");
 });
 
