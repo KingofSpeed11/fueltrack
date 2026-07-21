@@ -113,7 +113,19 @@
       <button class="btn" id="btn-log-meal-combined">📝📷 Log a Meal</button>
       <div class="status-line" style="margin-top:2px;">Describe it, snap a photo, or both — the more you give it, the more accurate.</div>
 
+      <button class="btn secondary" id="btn-scan-barcode">📦 Scan a Barcode</button>
+      <div class="status-line" style="margin-top:2px;">For packaged food — pulls exact nutrition facts from the product's real label.</div>
+
       <button class="btn secondary" id="btn-skip-photo">🔍 Search the Food List</button>
+    </div>
+
+    <div id="log-step-barcode" class="hidden">
+      <div class="card">
+        <h2>Scan a Barcode</h2>
+        <div id="barcode-reader" style="border-radius:10px; overflow:hidden;"></div>
+        <div class="status-line" id="barcode-status">Point your camera at the barcode</div>
+        <button class="btn secondary" id="btn-cancel-barcode">Cancel</button>
+      </div>
     </div>
 
     <div id="log-step-scanning" class="hidden">
@@ -245,6 +257,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="data/foods.js"></script>
 <script src="app.js"></script>
 </body>

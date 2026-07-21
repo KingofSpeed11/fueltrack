@@ -1,16 +1,118 @@
-// ---------- Storage helpers ----------
+// ---------- Cloud sync (Supabase) ----------
+// Personal single-user app - profile/goals/logs sync to a real database so
+// they're not stuck in one phone's browser storage. Photos stay local only
+// (too large to be worth syncing for a hobby project).
+const SUPABASE_URL = "https://ghnmmykkbrccrlflwlqi.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9UK_NvTBb-KgP352aP5U8Q_NmiwvGh4";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function pullFromCloud() {
+  try {
+    const { data: profileRow } = await sb.from("profile").select("*").eq("id", "youssef").maybeSingle();
+    if (profileRow) {
+      profile = {
+        name: profileRow.name,
+        age: profileRow.age,
+        sex: profileRow.sex,
+        heightCm: profileRow.height_cm,
+        weightKg: profileRow.weight_kg,
+        activity: profileRow.activity,
+        goal: profileRow.goal,
+        manualGoals: profileRow.manual_goals || undefined,
+      };
+      saveProfileLocal(profile);
+    }
+    const { data: logRows } = await sb.from("logs").select("*").order("time", { ascending: true });
+    if (logRows) {
+      const localById = {};
+      loadLogsLocal().forEach((l) => (localById[l.id] = l));
+      logs = logRows.map((r) => ({
+        id: r.id,
+        date: r.date,
+        time: r.time,
+        foodId: r.food_id,
+        name: r.name,
+        grams: r.grams,
+        calories: r.calories,
+        protein: r.protein,
+        carbs: r.carbs,
+        fat: r.fat,
+        fiber: r.fiber,
+        sugar: r.sugar,
+        sodium: r.sodium,
+        photo: (localById[r.id] && localById[r.id].photo) || null,
+      }));
+      saveLogsLocal(logs);
+    }
+    return true;
+  } catch (e) {
+    console.error("Cloud sync (pull) failed, using local data:", e);
+    return false;
+  }
+}
+
+async function pushProfileToCloud(p) {
+  try {
+    await sb.from("profile").upsert({
+      id: "youssef",
+      name: p.name,
+      age: p.age,
+      sex: p.sex,
+      height_cm: p.heightCm,
+      weight_kg: p.weightKg,
+      activity: p.activity,
+      goal: p.goal,
+      manual_goals: p.manualGoals || null,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("Cloud sync (profile) failed:", e);
+  }
+}
+
+async function pushLogInsert(entry) {
+  try {
+    await sb.from("logs").insert({
+      id: entry.id,
+      date: entry.date,
+      time: entry.time,
+      food_id: entry.foodId || null,
+      name: entry.name,
+      grams: entry.grams,
+      calories: entry.calories,
+      protein: entry.protein,
+      carbs: entry.carbs,
+      fat: entry.fat,
+      fiber: entry.fiber,
+      sugar: entry.sugar,
+      sodium: entry.sodium,
+    });
+  } catch (e) {
+    console.error("Cloud sync (log insert) failed:", e);
+  }
+}
+
+async function pushLogDelete(id) {
+  try {
+    await sb.from("logs").delete().eq("id", id);
+  } catch (e) {
+    console.error("Cloud sync (log delete) failed:", e);
+  }
+}
+
+// ---------- Local cache (instant load + offline fallback) ----------
 const STORE_KEY_PROFILE = "ft_profile";
 const STORE_KEY_LOGS = "ft_logs";
 
-function loadProfile() {
+function loadProfileLocal() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY_PROFILE)); } catch (e) { return null; }
 }
-function saveProfile(p) { localStorage.setItem(STORE_KEY_PROFILE, JSON.stringify(p)); }
+function saveProfileLocal(p) { localStorage.setItem(STORE_KEY_PROFILE, JSON.stringify(p)); }
 
-function loadLogs() {
+function loadLogsLocal() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY_LOGS)) || []; } catch (e) { return []; }
 }
-function saveLogs(logs) {
+function saveLogsLocal(logs) {
   try {
     localStorage.setItem(STORE_KEY_LOGS, JSON.stringify(logs));
   } catch (e) {
@@ -19,6 +121,15 @@ function saveLogs(logs) {
     localStorage.setItem(STORE_KEY_LOGS, JSON.stringify(stripped));
   }
 }
+
+function loadProfile() { return loadProfileLocal(); }
+function saveProfile(p) {
+  saveProfileLocal(p);
+  pushProfileToCloud(p);
+}
+
+function loadLogs() { return loadLogsLocal(); }
+function saveLogs(logs) { saveLogsLocal(logs); }
 
 function todayStr() {
   const d = new Date();
@@ -193,6 +304,7 @@ function renderEntryRow(entry) {
   row.querySelector(".del").addEventListener("click", () => {
     logs = logs.filter((l) => l.id !== entry.id);
     saveLogs(logs);
+    pushLogDelete(entry.id);
     renderAll();
   });
   return row;
@@ -270,12 +382,14 @@ let mealItems = [];
 function resetLogFlow() {
   currentScan = { photoDataUrl: null, food: null, portionMult: 1, portionGrams: null };
   mealItems = [];
+  stopBarcodeScanner();
   $("log-step-capture").classList.remove("hidden");
   $("log-step-scanning").classList.add("hidden");
   $("log-step-pick").classList.add("hidden");
   $("log-step-portion").classList.add("hidden");
   $("log-step-combined").classList.add("hidden");
   $("log-step-review").classList.add("hidden");
+  $("log-step-barcode").classList.add("hidden");
   $("food-search").value = "";
   $("search-results").innerHTML = "";
   $("describe-text").value = "";
@@ -286,22 +400,37 @@ function resetLogFlow() {
   $("btn-remove-photo").classList.add("hidden");
   $("btn-attach-photo").classList.remove("hidden");
   $("review-photo").classList.add("hidden");
+  $("barcode-status").textContent = "Point your camera at the barcode";
   renderQuickAdd();
 }
 
 // ---------- Quick Add (learns your most-logged foods) ----------
 function computeFrequentFoods() {
   const counts = {};
-  const lastGrams = {};
+  const lastEntry = {};
   logs.forEach((l) => {
     if (!l.foodId) return;
     counts[l.foodId] = (counts[l.foodId] || 0) + 1;
-    lastGrams[l.foodId] = l.grams;
+    lastEntry[l.foodId] = l;
   });
   return Object.keys(counts)
     .sort((a, b) => counts[b] - counts[a])
     .slice(0, 6)
-    .map((id) => ({ food: FOOD_DB.find((f) => f.id === id), grams: lastGrams[id] }))
+    .map((id) => {
+      const known = FOOD_DB.find((f) => f.id === id);
+      if (known) return { food: known, grams: lastEntry[id].grams };
+      // Not in the built-in database (e.g. a scanned barcode item) -
+      // rebuild a food-like object straight from the last logged entry.
+      const e = lastEntry[id];
+      return {
+        food: {
+          id: e.foodId, name: e.name, serving: `${e.grams}g`, grams: e.grams,
+          calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat,
+          fiber: e.fiber || 0, sugar: e.sugar || 0, sodium: e.sodium || 0,
+        },
+        grams: e.grams,
+      };
+    })
     .filter((x) => x.food);
 }
 
@@ -599,6 +728,7 @@ $("btn-log-meal").addEventListener("click", () => {
       photo: currentScan.photoDataUrl || null,
     };
     logs.push(entry);
+    pushLogInsert(entry);
   });
   saveLogs(logs);
   renderAll();
@@ -612,6 +742,102 @@ $("btn-skip-photo").addEventListener("click", () => {
 });
 
 $("btn-cancel-pick").addEventListener("click", () => {
+  resetLogFlow();
+  showScreen("dashboard");
+});
+
+// ---------- Barcode scanner (Open Food Facts - free, no key needed) ----------
+let html5QrCode = null;
+
+async function stopBarcodeScanner() {
+  if (html5QrCode) {
+    try {
+      await html5QrCode.stop();
+      html5QrCode.clear();
+    } catch (e) {
+      // already stopped
+    }
+    html5QrCode = null;
+  }
+}
+
+function buildFoodFromBarcodeProduct(product, code) {
+  const n = product.nutriments || {};
+  const per100 = {
+    calories: n["energy-kcal_100g"] ?? 0,
+    protein: n["proteins_100g"] ?? 0,
+    carbs: n["carbohydrates_100g"] ?? 0,
+    fat: n["fat_100g"] ?? 0,
+    fiber: n["fiber_100g"] ?? 0,
+    sugar: n["sugars_100g"] ?? 0,
+    sodium: (n["sodium_100g"] ?? 0) * 1000, // g -> mg
+  };
+  let grams = 100;
+  const match = (product.serving_size || "").match(/(\d+(\.\d+)?)\s*g/i);
+  if (match) grams = parseFloat(match[1]);
+  const ratio = grams / 100;
+  return {
+    id: "off_" + code,
+    name: product.product_name || "Scanned Product",
+    serving: product.serving_size ? `1 serving (${product.serving_size})` : "100g",
+    grams: grams,
+    calories: Math.round(per100.calories * ratio),
+    protein: Math.round(per100.protein * ratio),
+    carbs: Math.round(per100.carbs * ratio),
+    fat: Math.round(per100.fat * ratio),
+    fiber: Math.round(per100.fiber * ratio),
+    sugar: Math.round(per100.sugar * ratio),
+    sodium: Math.round(per100.sodium * ratio),
+  };
+}
+
+async function onBarcodeDecoded(code) {
+  await stopBarcodeScanner();
+  $("barcode-status").textContent = `Looking up ${code}…`;
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+    const data = await res.json();
+    if (data.status === 1 && data.product) {
+      const food = buildFoodFromBarcodeProduct(data.product, code);
+      selectFood(food);
+    } else {
+      $("barcode-status").textContent = "Couldn't find that product in the database. Try Search or Describe instead.";
+    }
+  } catch (e) {
+    console.error(e);
+    $("barcode-status").textContent = "Network error looking that up. Check your connection and try again.";
+  }
+}
+
+$("btn-scan-barcode").addEventListener("click", async () => {
+  $("log-step-capture").classList.add("hidden");
+  $("log-step-barcode").classList.remove("hidden");
+  $("barcode-status").textContent = "Starting camera…";
+  try {
+    html5QrCode = new Html5Qrcode("barcode-reader");
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: { width: 260, height: 160 },
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+        ],
+      },
+      (decodedText) => onBarcodeDecoded(decodedText),
+      () => {} // ignore per-frame "no barcode found" noise
+    );
+    $("barcode-status").textContent = "Point your camera at the barcode";
+  } catch (e) {
+    console.error(e);
+    $("barcode-status").textContent = "Couldn't access the camera. Check permissions, or use Search instead.";
+  }
+});
+
+$("btn-cancel-barcode").addEventListener("click", () => {
   resetLogFlow();
   showScreen("dashboard");
 });
@@ -639,6 +865,7 @@ function selectFood(food, defaultGrams) {
   currentScan.portionGrams = grams;
   $("log-step-capture").classList.add("hidden");
   $("log-step-pick").classList.add("hidden");
+  $("log-step-barcode").classList.add("hidden");
   $("log-step-portion").classList.remove("hidden");
   $("portion-food-name").textContent = food.name;
   $("portion-base-macro").innerHTML = `<span>Base serving: ${food.serving}</span>`;
@@ -695,6 +922,7 @@ $("btn-log-it").addEventListener("click", () => {
     photo: currentScan.photoDataUrl,
   };
   logs.push(entry);
+  pushLogInsert(entry);
   saveLogs(logs);
   renderAll();
   resetLogFlow();
@@ -716,5 +944,20 @@ function init() {
   } else {
     showScreen("onboarding");
   }
+
+  // Cloud is the source of truth - refresh from it once it responds,
+  // so any device opening the app picks up the latest profile/goals/logs.
+  pullFromCloud().then((ok) => {
+    if (!ok) return;
+    if (profile) {
+      renderAll();
+      if (!$("screen-onboarding").classList.contains("hidden")) {
+        showScreen("dashboard");
+        $("tabbar").classList.remove("hidden");
+        $("fab-add").classList.remove("hidden");
+      }
+      if (!$("screen-history").classList.contains("hidden")) renderHistory();
+    }
+  });
 }
 init();
