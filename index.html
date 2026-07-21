@@ -110,14 +110,10 @@
         <div id="quick-add-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
       </div>
 
-      <button class="btn" id="btn-describe-meal">📝 Describe Your Meal</button>
-      <div class="status-line" style="margin-top:2px;">Fastest & most accurate — works for anything, including home-cooked meals.</div>
+      <button class="btn" id="btn-log-meal-combined">📝📷 Log a Meal</button>
+      <div class="status-line" style="margin-top:2px;">Describe it, snap a photo, or both — the more you give it, the more accurate.</div>
 
       <button class="btn secondary" id="btn-skip-photo">🔍 Search the Food List</button>
-
-      <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" />
-      <button class="btn secondary" id="btn-take-photo">📷 Take / Choose Photo</button>
-      <div class="status-line" style="margin-top:2px;">Best for simple single foods (fruit, burgers, pizza). Won't recognize homemade or mixed dishes — use Describe instead for those.</div>
     </div>
 
     <div id="log-step-scanning" class="hidden">
@@ -125,16 +121,27 @@
       <div class="status-line" id="scan-status">Loading AI model…</div>
     </div>
 
-    <div id="log-step-describe" class="hidden">
+    <div id="log-step-combined" class="hidden">
       <div class="card">
         <h2>What did you eat?</h2>
+        <div id="combined-photo-area">
+          <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" />
+          <button class="btn secondary small" id="btn-attach-photo">📷 Add a Photo (optional)</button>
+        </div>
+        <img id="combined-photo-preview" class="scan-preview hidden" style="max-height:180px;" />
+        <button class="btn secondary small hidden" id="btn-remove-photo">✕ Remove Photo</button>
+
+        <label>Description</label>
         <textarea id="describe-text" rows="4" placeholder="e.g. 2 eggs, a banana, and a cup of white rice" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--card-2); color:var(--text); font-size:15px; font-family:inherit; resize:vertical;"></textarea>
+        <div class="status-line" style="margin:6px 0 0;">Tip: mention rough amounts ("2 eggs", "a cup of rice") — a photo alone can't tell portion size.</div>
+
         <button class="btn" id="btn-analyze-meal">Analyze</button>
         <button class="btn secondary" id="btn-cancel-describe">Cancel</button>
       </div>
     </div>
 
     <div id="log-step-review" class="hidden">
+      <img id="review-photo" class="scan-preview hidden" style="max-height:160px;" />
       <div class="card">
         <h2>Detected Items</h2>
         <div id="review-list"></div>
@@ -146,6 +153,7 @@
         <div class="search-results" id="review-search-results"></div>
       </div>
       <div class="card">
+        <div class="status-line" style="margin:0 0 8px;">🖐 Portion guide: palm ≈ 4oz protein · fist ≈ 1 cup carbs/veg · thumb ≈ 1 tbsp fat</div>
         <div class="goal-summary" id="review-totals">
           <div><b id="rt-cal">0</b><span>kcal</span></div>
           <div><b id="rt-protein">0g</b><span>protein</span></div>
@@ -158,12 +166,12 @@
     </div>
 
     <div id="log-step-pick" class="hidden">
-      <img id="pick-preview" class="scan-preview hidden" />
-      <div id="ai-suggestions"></div>
-
-      <label>Or search the food list</label>
-      <input type="text" id="food-search" placeholder="e.g. rice, chicken, apple" />
-      <div class="search-results" id="search-results"></div>
+      <div class="card">
+        <h2>Search the Food List</h2>
+        <input type="text" id="food-search" placeholder="e.g. rice, chicken, apple" />
+        <div class="search-results" id="search-results"></div>
+        <button class="btn secondary" id="btn-cancel-pick">Cancel</button>
+      </div>
     </div>
 
     <div id="log-step-portion" class="hidden">
@@ -179,6 +187,7 @@
         </div>
         <label>Or exact grams</label>
         <input type="number" id="portion-grams" />
+        <div class="status-line" style="margin:8px 0 0;">🖐 Portion guide: palm ≈ 4oz protein · fist ≈ 1 cup carbs/veg · thumb ≈ 1 tbsp fat</div>
         <div class="goal-summary" id="portion-totals">
           <div><b id="pt-cal">0</b><span>kcal</span></div>
           <div><b id="pt-protein">0g</b><span>protein</span></div>

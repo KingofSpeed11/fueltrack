@@ -274,14 +274,18 @@ function resetLogFlow() {
   $("log-step-scanning").classList.add("hidden");
   $("log-step-pick").classList.add("hidden");
   $("log-step-portion").classList.add("hidden");
-  $("log-step-describe").classList.add("hidden");
+  $("log-step-combined").classList.add("hidden");
   $("log-step-review").classList.add("hidden");
   $("food-search").value = "";
   $("search-results").innerHTML = "";
-  $("ai-suggestions").innerHTML = "";
   $("describe-text").value = "";
   $("review-search").value = "";
   $("review-search-results").innerHTML = "";
+  $("combined-photo-preview").classList.add("hidden");
+  $("combined-photo-preview").src = "";
+  $("btn-remove-photo").classList.add("hidden");
+  $("btn-attach-photo").classList.remove("hidden");
+  $("review-photo").classList.add("hidden");
   renderQuickAdd();
 }
 
@@ -449,9 +453,9 @@ function renderMealReview() {
   $("rt-fat").textContent = Math.round(totals.fat) + "g";
 }
 
-$("btn-describe-meal").addEventListener("click", () => {
+$("btn-log-meal-combined").addEventListener("click", () => {
   $("log-step-capture").classList.add("hidden");
-  $("log-step-describe").classList.remove("hidden");
+  $("log-step-combined").classList.remove("hidden");
 });
 
 $("btn-cancel-describe").addEventListener("click", () => {
@@ -459,12 +463,92 @@ $("btn-cancel-describe").addEventListener("click", () => {
   showScreen("dashboard");
 });
 
-$("btn-analyze-meal").addEventListener("click", () => {
+$("btn-attach-photo").addEventListener("click", () => $("photo-input").click());
+
+$("btn-remove-photo").addEventListener("click", () => {
+  currentScan.photoDataUrl = null;
+  $("combined-photo-preview").classList.add("hidden");
+  $("combined-photo-preview").src = "";
+  $("btn-remove-photo").classList.add("hidden");
+  $("btn-attach-photo").classList.remove("hidden");
+});
+
+$("photo-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    resizeImage(reader.result, 500, (resized) => {
+      currentScan.photoDataUrl = resized;
+      $("combined-photo-preview").src = resized;
+      $("combined-photo-preview").classList.remove("hidden");
+      $("btn-remove-photo").classList.remove("hidden");
+      $("btn-attach-photo").classList.add("hidden");
+    });
+  };
+  reader.readAsDataURL(file);
+});
+
+function resizeImage(dataUrl, maxWidth, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, maxWidth / img.width);
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    cb(canvas.toDataURL("image/jpeg", 0.65), canvas);
+  };
+  img.src = dataUrl;
+}
+
+function matchFoodFromLabel(label) {
+  const lower = label.toLowerCase();
+  for (const [keyword, foodId] of AI_KEYWORD_MAP) {
+    if (lower.includes(keyword)) {
+      return FOOD_DB.find((f) => f.id === foodId);
+    }
+  }
+  return null;
+}
+
+$("btn-analyze-meal").addEventListener("click", async () => {
   const text = $("describe-text").value.trim();
-  if (!text) return;
-  mealItems = parseMealText(text);
-  $("log-step-describe").classList.add("hidden");
+  const hasPhoto = !!currentScan.photoDataUrl;
+  if (!text && !hasPhoto) return;
+
+  mealItems = text ? parseMealText(text) : [];
+
+  if (hasPhoto) {
+    $("log-step-combined").classList.add("hidden");
+    $("log-step-scanning").classList.remove("hidden");
+    $("scan-preview").src = currentScan.photoDataUrl;
+    $("scan-status").textContent = "Loading AI model…";
+    try {
+      if (!mobilenetModel) {
+        mobilenetModel = await mobilenet.load({ version: 2, alpha: 1.0 });
+      }
+      $("scan-status").textContent = "Analyzing photo…";
+      const predictions = await mobilenetModel.classify($("scan-preview"), 5);
+      predictions.forEach((p) => {
+        const food = matchFoodFromLabel(p.className);
+        if (food && !mealItems.find((m) => m.food.id === food.id)) {
+          mealItems.push({ food, multiplier: 1 });
+        }
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    $("log-step-scanning").classList.add("hidden");
+  }
+
+  $("log-step-combined").classList.add("hidden");
   $("log-step-review").classList.remove("hidden");
+  if (hasPhoto) {
+    $("review-photo").src = currentScan.photoDataUrl;
+    $("review-photo").classList.remove("hidden");
+  }
   renderMealReview();
 });
 
@@ -512,7 +596,7 @@ $("btn-log-meal").addEventListener("click", () => {
       fiber: Math.round(item.food.fiber * ratio),
       sugar: Math.round(item.food.sugar * ratio),
       sodium: Math.round(item.food.sodium * ratio),
-      photo: null,
+      photo: currentScan.photoDataUrl || null,
     };
     logs.push(entry);
   });
@@ -522,105 +606,15 @@ $("btn-log-meal").addEventListener("click", () => {
   showScreen("dashboard");
 });
 
-$("btn-take-photo").addEventListener("click", () => $("photo-input").click());
-
 $("btn-skip-photo").addEventListener("click", () => {
   $("log-step-capture").classList.add("hidden");
   $("log-step-pick").classList.remove("hidden");
-  $("pick-preview").classList.add("hidden");
 });
 
-$("photo-input").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    resizeImage(reader.result, 500, (resized) => {
-      currentScan.photoDataUrl = resized;
-      runScan(resized);
-    });
-  };
-  reader.readAsDataURL(file);
+$("btn-cancel-pick").addEventListener("click", () => {
+  resetLogFlow();
+  showScreen("dashboard");
 });
-
-function resizeImage(dataUrl, maxWidth, cb) {
-  const img = new Image();
-  img.onload = () => {
-    const scale = Math.min(1, maxWidth / img.width);
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    cb(canvas.toDataURL("image/jpeg", 0.65), canvas);
-  };
-  img.src = dataUrl;
-}
-
-async function runScan(dataUrl) {
-  $("log-step-capture").classList.add("hidden");
-  $("log-step-scanning").classList.remove("hidden");
-  $("scan-preview").src = dataUrl;
-  $("scan-status").textContent = "Loading AI model…";
-
-  try {
-    if (!mobilenetModel) {
-      mobilenetModel = await mobilenet.load({ version: 2, alpha: 1.0 });
-    }
-    $("scan-status").textContent = "Analyzing photo…";
-    const imgEl = $("scan-preview");
-    const predictions = await mobilenetModel.classify(imgEl, 5);
-    showAiSuggestions(predictions);
-  } catch (err) {
-    console.error(err);
-    $("scan-status").textContent = "Couldn't load AI model (offline?). Pick from the list below instead.";
-  } finally {
-    $("log-step-scanning").classList.add("hidden");
-    $("log-step-pick").classList.remove("hidden");
-    $("pick-preview").src = dataUrl;
-    $("pick-preview").classList.remove("hidden");
-  }
-}
-
-function matchFoodFromLabel(label) {
-  const lower = label.toLowerCase();
-  for (const [keyword, foodId] of AI_KEYWORD_MAP) {
-    if (lower.includes(keyword)) {
-      return FOOD_DB.find((f) => f.id === foodId);
-    }
-  }
-  return null;
-}
-
-function showAiSuggestions(predictions) {
-  const box = $("ai-suggestions");
-  box.innerHTML = "";
-  const matches = [];
-  predictions.forEach((p) => {
-    const food = matchFoodFromLabel(p.className);
-    if (food && !matches.find((m) => m.food.id === food.id)) {
-      matches.push({ food, confidence: p.probability });
-    }
-  });
-
-  if (matches.length === 0) {
-    box.innerHTML = `<div class="status-line">AI wasn't sure what this is — search for it below.</div>`;
-    return;
-  }
-
-  const heading = document.createElement("div");
-  heading.className = "status-line";
-  heading.textContent = "AI thinks this might be:";
-  box.appendChild(heading);
-
-  matches.slice(0, 3).forEach(({ food, confidence }) => {
-    const el = document.createElement("div");
-    el.className = "suggestion";
-    el.innerHTML = `<span>${food.name}</span><span class="conf">${Math.round(confidence * 100)}% match</span>`;
-    el.addEventListener("click", () => selectFood(food));
-    box.appendChild(el);
-  });
-}
 
 $("food-search").addEventListener("input", () => {
   const q = $("food-search").value.trim().toLowerCase();
