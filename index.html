@@ -105,6 +105,11 @@
     <header class="topbar"><h1>Log Food</h1></header>
 
     <div id="log-step-capture">
+      <div class="card hidden" id="my-meals-card">
+        <h2>My Meals</h2>
+        <div id="my-meals-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
       <div class="card hidden" id="quick-add-card">
         <h2>Quick Add</h2>
         <div id="quick-add-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
@@ -117,6 +122,9 @@
       <div class="status-line" style="margin-top:2px;">For packaged food — pulls exact nutrition facts from the product's real label.</div>
 
       <button class="btn secondary" id="btn-skip-photo">🔍 Search the Food List</button>
+
+      <button class="btn secondary" id="btn-create-custom">➕ Create a Custom Food</button>
+      <div class="status-line" style="margin-top:2px;">Save your own item with your own numbers — always available after.</div>
     </div>
 
     <div id="log-step-barcode" class="hidden">
@@ -124,7 +132,47 @@
         <h2>Scan a Barcode</h2>
         <div id="barcode-reader" style="border-radius:10px; overflow:hidden;"></div>
         <div class="status-line" id="barcode-status">Point your camera at the barcode</div>
+        <label>Or type the barcode number</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="barcode-manual-input" placeholder="e.g. 051500244012" inputmode="numeric" style="flex:1" />
+          <button class="btn small" id="btn-barcode-manual-lookup" style="width:auto; margin-top:0; padding:0 16px;">Look Up</button>
+        </div>
+        <div id="barcode-not-found-actions" class="hidden">
+          <button class="btn secondary small" id="btn-create-custom-from-barcode">➕ Create a Custom Food Instead</button>
+        </div>
         <button class="btn secondary" id="btn-cancel-barcode">Cancel</button>
+      </div>
+    </div>
+
+    <div id="log-step-custom-food" class="hidden">
+      <div class="card">
+        <h2>Create a Custom Food</h2>
+        <label>Name</label>
+        <input type="text" id="cf-name" placeholder="e.g. Mom's Chicken Tagine" />
+        <label>Serving description</label>
+        <input type="text" id="cf-serving" placeholder="e.g. 1 bowl" />
+        <label>Grams for that serving</label>
+        <input type="number" id="cf-grams" placeholder="350" />
+        <div class="goal-summary" style="grid-template-columns: repeat(2, 1fr);">
+          <div style="text-align:left; background:none; padding:0;">
+            <label style="margin-top:0;">Calories</label>
+            <input type="number" id="cf-calories" placeholder="420" />
+          </div>
+          <div style="text-align:left; background:none; padding:0;">
+            <label style="margin-top:0;">Protein (g)</label>
+            <input type="number" id="cf-protein" placeholder="32" />
+          </div>
+          <div style="text-align:left; background:none; padding:0;">
+            <label style="margin-top:0;">Carbs (g)</label>
+            <input type="number" id="cf-carbs" placeholder="18" />
+          </div>
+          <div style="text-align:left; background:none; padding:0;">
+            <label style="margin-top:0;">Fat (g)</label>
+            <input type="number" id="cf-fat" placeholder="24" />
+          </div>
+        </div>
+        <button class="btn" id="btn-save-custom-food">Save Food</button>
+        <button class="btn secondary" id="btn-cancel-custom-food">Cancel</button>
       </div>
     </div>
 
@@ -173,6 +221,7 @@
           <div><b id="rt-fat">0g</b><span>fat</span></div>
         </div>
         <button class="btn" id="btn-log-meal">Log All Items</button>
+        <button class="btn secondary small" id="btn-save-as-meal">💾 Save as a Meal (for one-tap logging later)</button>
         <button class="btn secondary" id="btn-cancel-review">Cancel</button>
       </div>
     </div>

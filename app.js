@@ -44,10 +44,45 @@ async function pullFromCloud() {
       }));
       saveLogsLocal(logs);
     }
+    const { data: customRows } = await sb.from("custom_foods").select("*").order("created_at", { ascending: true });
+    if (customRows) {
+      CUSTOM_FOODS = customRows.map((r) => ({
+        id: r.id, name: r.name, serving: r.serving || `${r.grams}g`, grams: r.grams,
+        calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat,
+        fiber: r.fiber || 0, sugar: r.sugar || 0, sodium: r.sodium || 0,
+        aliases: [r.name.toLowerCase()],
+      }));
+      saveCustomFoodsLocal(CUSTOM_FOODS);
+    }
+    const { data: templateRows } = await sb.from("meal_templates").select("*").order("created_at", { ascending: true });
+    if (templateRows) {
+      MEAL_TEMPLATES = templateRows.map((r) => ({ id: r.id, name: r.name, items: r.items }));
+      saveMealTemplatesLocal(MEAL_TEMPLATES);
+    }
     return true;
   } catch (e) {
     console.error("Cloud sync (pull) failed, using local data:", e);
     return false;
+  }
+}
+
+async function pushCustomFood(food) {
+  try {
+    await sb.from("custom_foods").insert({
+      id: food.id, name: food.name, serving: food.serving, grams: food.grams,
+      calories: food.calories, protein: food.protein, carbs: food.carbs, fat: food.fat,
+      fiber: food.fiber, sugar: food.sugar, sodium: food.sodium,
+    });
+  } catch (e) {
+    console.error("Cloud sync (custom food) failed:", e);
+  }
+}
+
+async function pushMealTemplate(template) {
+  try {
+    await sb.from("meal_templates").insert({ id: template.id, name: template.name, items: template.items });
+  } catch (e) {
+    console.error("Cloud sync (meal template) failed:", e);
   }
 }
 
@@ -131,6 +166,19 @@ function saveProfile(p) {
 function loadLogs() { return loadLogsLocal(); }
 function saveLogs(logs) { saveLogsLocal(logs); }
 
+const STORE_KEY_CUSTOM_FOODS = "ft_custom_foods";
+const STORE_KEY_MEAL_TEMPLATES = "ft_meal_templates";
+
+function loadCustomFoodsLocal() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY_CUSTOM_FOODS)) || []; } catch (e) { return []; }
+}
+function saveCustomFoodsLocal(arr) { localStorage.setItem(STORE_KEY_CUSTOM_FOODS, JSON.stringify(arr)); }
+
+function loadMealTemplatesLocal() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY_MEAL_TEMPLATES)) || []; } catch (e) { return []; }
+}
+function saveMealTemplatesLocal(arr) { localStorage.setItem(STORE_KEY_MEAL_TEMPLATES, JSON.stringify(arr)); }
+
 function todayStr() {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -170,6 +218,8 @@ function calcGoals(profile) {
 // ---------- App state ----------
 let profile = loadProfile();
 let logs = loadLogs();
+let CUSTOM_FOODS = loadCustomFoodsLocal();
+let MEAL_TEMPLATES = loadMealTemplatesLocal();
 let mobilenetModel = null;
 let currentScan = { photoDataUrl: null, food: null, portionMult: 1, portionGrams: null };
 
@@ -390,6 +440,8 @@ function resetLogFlow() {
   $("log-step-combined").classList.add("hidden");
   $("log-step-review").classList.add("hidden");
   $("log-step-barcode").classList.add("hidden");
+  $("log-step-custom-food").classList.add("hidden");
+  $("barcode-not-found-actions").classList.add("hidden");
   $("food-search").value = "";
   $("search-results").innerHTML = "";
   $("describe-text").value = "";
@@ -402,6 +454,7 @@ function resetLogFlow() {
   $("review-photo").classList.add("hidden");
   $("barcode-status").textContent = "Point your camera at the barcode";
   renderQuickAdd();
+  renderMyMeals();
 }
 
 // ---------- Quick Add (learns your most-logged foods) ----------
@@ -417,7 +470,7 @@ function computeFrequentFoods() {
     .sort((a, b) => counts[b] - counts[a])
     .slice(0, 6)
     .map((id) => {
-      const known = FOOD_DB.find((f) => f.id === id);
+      const known = allFoods().find((f) => f.id === id);
       if (known) return { food: known, grams: lastEntry[id].grams };
       // Not in the built-in database (e.g. a scanned barcode item) -
       // rebuild a food-like object straight from the last logged entry.
@@ -488,10 +541,14 @@ function extractQuantity(beforeText) {
   return 1;
 }
 
+function allFoods() {
+  return FOOD_DB.concat(CUSTOM_FOODS);
+}
+
 function parseMealText(text) {
   const lower = " " + text.toLowerCase() + " ";
   const aliasPairs = [];
-  FOOD_DB.forEach((food) => {
+  allFoods().forEach((food) => {
     (food.aliases || [food.name.toLowerCase()]).forEach((alias) => {
       aliasPairs.push({ food, alias: alias.toLowerCase() });
     });
@@ -686,7 +743,7 @@ $("review-search").addEventListener("input", () => {
   const results = $("review-search-results");
   results.innerHTML = "";
   if (!q) return;
-  FOOD_DB.filter((f) => f.name.toLowerCase().includes(q))
+  allFoods().filter((f) => f.name.toLowerCase().includes(q))
     .slice(0, 20)
     .forEach((f) => {
       const el = document.createElement("div");
@@ -761,7 +818,7 @@ async function stopBarcodeScanner() {
   }
 }
 
-function buildFoodFromBarcodeProduct(product, code) {
+function buildFoodFromOpenFoodFacts(product, code) {
   const n = product.nutriments || {};
   const per100 = {
     calories: n["energy-kcal_100g"] ?? 0,
@@ -791,27 +848,79 @@ function buildFoodFromBarcodeProduct(product, code) {
   };
 }
 
+function buildFoodFromUSDA(item, code) {
+  const val = (num) => {
+    const n = item.foodNutrients.find((f) => f.nutrientNumber === num);
+    return n ? n.value : 0;
+  };
+  const per100 = {
+    calories: val("208"),
+    protein: val("203"),
+    carbs: val("205"),
+    fat: val("204"),
+    fiber: val("291"),
+    sugar: val("269"),
+    sodium: val("307"),
+  };
+  const grams = item.servingSize || 100;
+  const ratio = grams / 100;
+  return {
+    id: "usda_" + code,
+    name: item.description ? item.description.split(",").slice(0, 3).join(",").trim() : "Scanned Product",
+    serving: item.householdServingFullText ? `1 serving (${item.householdServingFullText})` : `${grams}g`,
+    grams: grams,
+    calories: Math.round(per100.calories * ratio),
+    protein: Math.round(per100.protein * ratio),
+    carbs: Math.round(per100.carbs * ratio),
+    fat: Math.round(per100.fat * ratio),
+    fiber: Math.round(per100.fiber * ratio),
+    sugar: Math.round(per100.sugar * ratio),
+    sodium: Math.round(per100.sodium * ratio),
+  };
+}
+
+async function lookupOpenFoodFacts(code) {
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+  const data = await res.json();
+  if (data.status === 1 && data.product && (data.product.nutriments || {})["energy-kcal_100g"] != null) {
+    return buildFoodFromOpenFoodFacts(data.product, code);
+  }
+  return null;
+}
+
+async function lookupUSDA(code) {
+  const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${code}&dataType=Branded&pageSize=5`);
+  const data = await res.json();
+  const stripped = code.replace(/^0+/, "");
+  const match = (data.foods || []).find((f) => f.gtinUpc && (f.gtinUpc === code || (stripped && f.gtinUpc === stripped)));
+  if (match) return buildFoodFromUSDA(match, code);
+  return null;
+}
+
 async function onBarcodeDecoded(code) {
   await stopBarcodeScanner();
-  $("barcode-status").textContent = `Looking up ${code}…`;
+  $("barcode-not-found-actions").classList.add("hidden");
+  $("barcode-status").textContent = `Scanned ${code} — looking it up…`;
   try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-    const data = await res.json();
-    if (data.status === 1 && data.product) {
-      const food = buildFoodFromBarcodeProduct(data.product, code);
+    let food = await lookupOpenFoodFacts(code);
+    if (!food) {
+      $("barcode-status").textContent = `Scanned ${code} — checking a second database…`;
+      food = await lookupUSDA(code);
+    }
+    if (food) {
       selectFood(food);
     } else {
-      $("barcode-status").textContent = "Couldn't find that product in the database. Try Search or Describe instead.";
+      $("barcode-status").textContent = `Scanned ${code}, but it's not in either food database.`;
+      $("barcode-not-found-actions").classList.remove("hidden");
     }
   } catch (e) {
     console.error(e);
     $("barcode-status").textContent = "Network error looking that up. Check your connection and try again.";
+    $("barcode-not-found-actions").classList.remove("hidden");
   }
 }
 
-$("btn-scan-barcode").addEventListener("click", async () => {
-  $("log-step-capture").classList.add("hidden");
-  $("log-step-barcode").classList.remove("hidden");
+async function startBarcodeCamera() {
   $("barcode-status").textContent = "Starting camera…";
   try {
     html5QrCode = new Html5Qrcode("barcode-reader");
@@ -825,6 +934,10 @@ $("btn-scan-barcode").addEventListener("click", async () => {
           Html5QrcodeSupportedFormats.EAN_8,
           Html5QrcodeSupportedFormats.UPC_A,
           Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.CODABAR,
         ],
       },
       (decodedText) => onBarcodeDecoded(decodedText),
@@ -833,8 +946,26 @@ $("btn-scan-barcode").addEventListener("click", async () => {
     $("barcode-status").textContent = "Point your camera at the barcode";
   } catch (e) {
     console.error(e);
-    $("barcode-status").textContent = "Couldn't access the camera. Check permissions, or use Search instead.";
+    $("barcode-status").textContent = "Couldn't access the camera. Type the barcode number below instead.";
   }
+}
+
+$("btn-scan-barcode").addEventListener("click", () => {
+  $("log-step-capture").classList.add("hidden");
+  $("log-step-barcode").classList.remove("hidden");
+  $("barcode-manual-input").value = "";
+  startBarcodeCamera();
+});
+
+$("btn-barcode-manual-lookup").addEventListener("click", () => {
+  const code = $("barcode-manual-input").value.trim();
+  if (!code) return;
+  onBarcodeDecoded(code);
+});
+
+$("btn-create-custom-from-barcode").addEventListener("click", () => {
+  $("log-step-barcode").classList.add("hidden");
+  $("log-step-custom-food").classList.remove("hidden");
 });
 
 $("btn-cancel-barcode").addEventListener("click", () => {
@@ -842,12 +973,102 @@ $("btn-cancel-barcode").addEventListener("click", () => {
   showScreen("dashboard");
 });
 
+// ---------- Custom foods (your own numbers, always available after) ----------
+$("btn-create-custom").addEventListener("click", () => {
+  $("log-step-capture").classList.add("hidden");
+  $("log-step-custom-food").classList.remove("hidden");
+  ["cf-name", "cf-serving", "cf-grams", "cf-calories", "cf-protein", "cf-carbs", "cf-fat"].forEach((id) => ($(id).value = ""));
+});
+
+$("btn-cancel-custom-food").addEventListener("click", () => {
+  resetLogFlow();
+  showScreen("dashboard");
+});
+
+$("btn-save-custom-food").addEventListener("click", () => {
+  const name = $("cf-name").value.trim();
+  const grams = parseFloat($("cf-grams").value);
+  const calories = parseFloat($("cf-calories").value);
+  const protein = parseFloat($("cf-protein").value) || 0;
+  const carbs = parseFloat($("cf-carbs").value) || 0;
+  const fat = parseFloat($("cf-fat").value) || 0;
+  if (!name || !grams || !calories) {
+    alert("Fill in at least name, grams, and calories.");
+    return;
+  }
+  const food = {
+    id: "custom_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name,
+    serving: $("cf-serving").value.trim() || `${grams}g`,
+    grams, calories, protein, carbs, fat, fiber: 0, sugar: 0, sodium: 0,
+    aliases: [name.toLowerCase()],
+  };
+  CUSTOM_FOODS.push(food);
+  saveCustomFoodsLocal(CUSTOM_FOODS);
+  pushCustomFood(food);
+  selectFood(food);
+});
+
+// ---------- Meal templates (save a combo, log it in one tap later) ----------
+function renderMyMeals() {
+  const card = $("my-meals-card");
+  const list = $("my-meals-list");
+  if (MEAL_TEMPLATES.length === 0) {
+    card.classList.add("hidden");
+    return;
+  }
+  card.classList.remove("hidden");
+  list.innerHTML = "";
+  MEAL_TEMPLATES.forEach((template) => {
+    const cal = template.items.reduce((s, i) => s + i.calories, 0);
+    const row = document.createElement("button");
+    row.className = "btn secondary small";
+    row.style.cssText = "width:100%; margin-top:0; text-align:left; display:flex; justify-content:space-between;";
+    row.innerHTML = `<span>${template.name}</span><span style="color:var(--accent);">${Math.round(cal)} kcal</span>`;
+    row.addEventListener("click", () => {
+      mealItems = template.items.map((i) => ({
+        food: { id: i.foodId, name: i.name, serving: `${i.grams}g`, grams: i.grams, calories: i.calories, protein: i.protein, carbs: i.carbs, fat: i.fat, fiber: i.fiber || 0, sugar: i.sugar || 0, sodium: i.sodium || 0 },
+        multiplier: 1,
+      }));
+      $("log-step-capture").classList.add("hidden");
+      $("log-step-review").classList.remove("hidden");
+      renderMealReview();
+    });
+    list.appendChild(row);
+  });
+}
+
+$("btn-save-as-meal").addEventListener("click", () => {
+  if (mealItems.length === 0) return;
+  const name = prompt("Name this meal (e.g. \"My Breakfast\"):");
+  if (!name || !name.trim()) return;
+  const template = {
+    id: "meal_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: name.trim(),
+    items: mealItems.map((i) => ({
+      foodId: i.food.id, name: i.food.name,
+      grams: Math.round(i.food.grams * i.multiplier),
+      calories: Math.round(i.food.calories * i.multiplier),
+      protein: Math.round(i.food.protein * i.multiplier),
+      carbs: Math.round(i.food.carbs * i.multiplier),
+      fat: Math.round(i.food.fat * i.multiplier),
+      fiber: Math.round((i.food.fiber || 0) * i.multiplier),
+      sugar: Math.round((i.food.sugar || 0) * i.multiplier),
+      sodium: Math.round((i.food.sodium || 0) * i.multiplier),
+    })),
+  };
+  MEAL_TEMPLATES.push(template);
+  saveMealTemplatesLocal(MEAL_TEMPLATES);
+  pushMealTemplate(template);
+  alert(`Saved "${template.name}" — it'll show up under My Meals next time.`);
+});
+
 $("food-search").addEventListener("input", () => {
   const q = $("food-search").value.trim().toLowerCase();
   const results = $("search-results");
   results.innerHTML = "";
   if (!q) return;
-  FOOD_DB.filter((f) => f.name.toLowerCase().includes(q))
+  allFoods().filter((f) => f.name.toLowerCase().includes(q))
     .slice(0, 20)
     .forEach((f) => {
       const el = document.createElement("div");
@@ -866,6 +1087,7 @@ function selectFood(food, defaultGrams) {
   $("log-step-capture").classList.add("hidden");
   $("log-step-pick").classList.add("hidden");
   $("log-step-barcode").classList.add("hidden");
+  $("log-step-custom-food").classList.add("hidden");
   $("log-step-portion").classList.remove("hidden");
   $("portion-food-name").textContent = food.name;
   $("portion-base-macro").innerHTML = `<span>Base serving: ${food.serving}</span>`;
